@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Real-Time Threat Monitor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0d1117;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+}
+header {
+    background: #161b22;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px solid #30363d;
+}
+header h1 { margin: 0; font-size: 28px; color: #58a6ff; }
+.container { width: 85%; margin: auto; margin-top: 30px; }
+.card {
+    background: #161b22;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #30363d;
+    margin-bottom: 30px;
+}
+.card h2 { font-size: 22px; margin-bottom: 10px; color: #58a6ff; }
+input {
+    width: 70%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #0d1117;
+    color: #fff;
+    border: 1px solid #30363d;
+    font-size: 15px;
+}
+button {
+    padding: 10px 15px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #238636;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+}
+button:hover { background: #2ea043; }
+#log {
+    background: #0d1117;
+    padding: 15px;
+    height: 300px;
+    overflow-y: scroll;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    font-family: 'Consolas', monospace;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+footer { text-align: center; color: #777; margin: 20px 0; font-size: 14px; }
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    margin-top: 10px;
+    background: #30363d;
+    border-radius: 5px;
+    font-size: 13px;
+}
+.safe { background: #238636; }
+.threat { background: #da3633; }
+.scan { background: #8957e5; }
+</style>
+</head>
+
+<body>
+<header>
+    <h1>⚡ AI Real-Time Cyber Threat Monitor</h1>
+</header>
+
+<div class="container">
+
+<div class="card">
+    <h2>📁 Select Folder to Monitor</h2>
+    <input id="folderPath" placeholder="Paste folder path, e.g., C:\Users\hp\Downloads">
+    <button onclick="startMonitoring()">Start</button><br>
+    <span id="statusBadge" class="badge scan">Idle</span>
+</div>
+
+<div class="card">
+    <h2>📡 Live Threat Logs</h2>
+    <div id="log">Waiting for scan...</div>
+</div>
+
+</div>
+
+<footer>Developed for Hackathon • AI Cybersecurity Project</footer>
+
+<script>
+function startMonitoring() {
+    let path = document.getElementById("folderPath").value;
+    document.getElementById("statusBadge").className = "badge scan";
+    document.getElementById("statusBadge").innerHTML = "Scanning...";
+
+    fetch("http://127.0.0.1:5000/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder_path: path })
+    });
+
+    const eventSource = new EventSource("http://127.0.0.1:5000/stream");
+    eventSource.onmessage = function(e) {
+        let logBox = document.getElementById("log");
+        logBox.innerHTML += e.data + "\n";
+        logBox.scrollTop = logBox.scrollHeight;
+
+        if (e.data.includes("Safe")) statusBadge("safe", "Safe File Detected");
+        if (e.data.includes("THREAT")) statusBadge("threat", "Threat Detected!");
+        if (e.data.includes("Scanning")) statusBadge("scan", "Scanning...");
+    };
+}
+
+function statusBadge(cls, text) {
+    let badge = document.getElementById("statusBadge");
+    badge.className = "badge " + cls;
+    badge.innerHTML = text;
+}
+</script>
+
+</body>
+</html>
